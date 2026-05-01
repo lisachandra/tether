@@ -23,7 +23,7 @@ export type Guard<T = unknown> = (value: unknown) => value is T;
 
 export interface MessageMetadata<T> {
   readonly guard: Modding.Generic<StripMeta<T>, "guard">;
-  readonly serializerMetadata: T extends undefined ? undefined : SerializerMetadata<T>;
+  readonly serializerMetadata: [T] extends [undefined] ? undefined : SerializerMetadata<T>;
 }
 
 export type MessageEmitterMetadata<MessageData> = {

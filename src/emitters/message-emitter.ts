@@ -286,12 +286,14 @@ export class MessageEmitter<MessageData> extends Destroyable {
     if (callbacks === undefined) return;
 
     const data = this.serdes.deserializePacket(message, serializedPacket);
-    for (const callback of callbacks)
+    for (const callback of callbacks) {
       if (isServer) {
         assert(player !== undefined);
         this.executeServerCallback(callback, player, message, data);
-      } else
+      } else {
         this.executeClientCallback(callback as ClientMessageCallback, message, data);
+      }
+    }
   }
 
   private executeServerCallback<Kind extends keyof MessageData>(
