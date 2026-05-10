@@ -43,7 +43,7 @@
     "@rbxts/destroyable": "^1.0.9",
     "@rbxts/object-utils": "^1.0.4",
     "@rbxts/repr": "^1.0.3",
-    "@rbxts/serio": "^1.2.7",
+    "@rbxts/serio": "^1.2.6",
     "@rbxts/services": "^1.6.0",
     "@rbxts/trash": "^1.0.8"
   }
