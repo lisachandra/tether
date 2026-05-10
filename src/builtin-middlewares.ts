@@ -58,7 +58,7 @@ export namespace BuiltinMiddlewares {
     };
   }
 
-  const horizontalLine = repeatString<"-", 36>();
+  const horizontalLine = "-".rep(36);
   /**
    * Creates a shared middleware that will log a message whenever a message is sent, containing the following information:
    * - The message kind

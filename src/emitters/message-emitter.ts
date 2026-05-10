@@ -63,7 +63,7 @@ export class MessageEmitter<MessageData> extends Destroyable {
     options?: Partial<MessageEmitterOptions<MessageData>>,
     meta?: Modding.Many<MessageEmitterMetadata<MessageData>>
   ): MessageEmitter<MessageData> {
-    const emitter = new MessageEmitter<MessageData>(Object.assign({}, defaultMesssageEmitterOptions, options));
+    const emitter = new MessageEmitter<MessageData>({ ...defaultMesssageEmitterOptions, ...options });
     if (meta === undefined) {
       warn(Warning.MetaGenerationFailed);
       return emitter;
@@ -72,7 +72,7 @@ export class MessageEmitter<MessageData> extends Destroyable {
     // lore
     // https://discord.com/channels/476080952636997633/506983834877689856/1363938149486821577
     type SorryLittensy = Record<BaseMessage, MessageMetadata<never>>;
-    for (const [kind, { guard, serializerMetadata }] of pairs(meta as SorryLittensy)) {
+    for (const [kind, { guard, serializerMetadata }] of pairs<SorryLittensy>(meta)) {
       const numberKind = tonumber(kind) as keyof MessageData & BaseMessage;
       emitter.guards.set(numberKind, guard);
 
