@@ -1,6 +1,5 @@
 import { Modding } from "@flamework/core";
 import { RunService } from "@rbxts/services";
-import { repeatString } from "@rbxts/flamework-meta-utils";
 import type { SerializerMetadata } from "@rbxts/serio";
 import type { Any } from "ts-toolbelt";
 import repr from "@rbxts/repr";
