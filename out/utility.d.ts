@@ -1,0 +1,13 @@
+import type { BaseMessage, PacketInfo, SerializedPacket } from "./structs";
+import type { MessageEmitterOptions } from "./emitters/message-emitter";
+export declare function bufferToString(buf?: buffer): string;
+export declare function encodeMessage(message: BaseMessage): number;
+export declare function decodeMessage(encoded: number): BaseMessage;
+export declare function writeMessage(buf: buffer, message: BaseMessage): void;
+export declare function readMessage(packet: SerializedPacket | buffer): BaseMessage;
+export declare function createMessageBuffer(message: BaseMessage): buffer;
+export declare function getAllPacketsWhich(infos: PacketInfo[], predicate: (info: PacketInfo) => boolean): SerializedPacket[];
+export declare function isUnreliable(info: PacketInfo): boolean;
+export declare function isReliable(info: PacketInfo): boolean;
+export declare function getPacket(info: PacketInfo): SerializedPacket;
+export declare function shouldBatch<MessageData>(message: keyof MessageData & BaseMessage, options: MessageEmitterOptions<MessageData>): boolean;

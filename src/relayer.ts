@@ -11,54 +11,71 @@ export type QueuedMessageData<MessageData> = ClientQueuedMessageData<MessageData
 declare let setLuneContext: (ctx: "server" | "client" | "both") => void;
 setLuneContext ??= () => { };
 
-let sendMessage: RemoteEvent<MessageEvent>;
-{
-  const name = "sendMessage";
-  const existing = ReplicatedStorage.FindFirstChild(name);
-  const remote = (existing ?? new Instance("RemoteEvent", ReplicatedStorage)) as RemoteEvent<MessageEvent>;
-  if (existing === undefined)
-    remote.Name = name;
+let nextEmitterId = 0;
 
-  sendMessage = remote;
-}
-let sendUnreliableMessage: UnreliableRemoteEvent<MessageEvent>;
-{
-  const name = "sendUnreliableMessage";
-  const existing = ReplicatedStorage.FindFirstChild(name);
-  const remote = (existing ?? new Instance("UnreliableRemoteEvent", ReplicatedStorage)) as UnreliableRemoteEvent<MessageEvent>;
-  if (existing === undefined)
-    remote.Name = name;
+function createRemotePair(id: number): {
+  send: RemoteEvent<MessageEvent>;
+  sendUnreliable: UnreliableRemoteEvent<MessageEvent>;
+} {
+  const sendName = `tether_send_${id}`;
+  const sendUnreliableName = `tether_sendUnreliable_${id}`;
 
-  sendUnreliableMessage = remote;
+  const existingSend = ReplicatedStorage.FindFirstChild(sendName);
+  const send = (existingSend ?? new Instance("RemoteEvent", ReplicatedStorage)) as RemoteEvent<MessageEvent>;
+  if (existingSend === undefined)
+    send.Name = sendName;
+
+  const existingUnreliable = ReplicatedStorage.FindFirstChild(sendUnreliableName);
+  const sendUnreliable = (existingUnreliable ?? new Instance("UnreliableRemoteEvent", ReplicatedStorage)) as UnreliableRemoteEvent<MessageEvent>;
+  if (existingUnreliable === undefined)
+    sendUnreliable.Name = sendUnreliableName;
+
+  return { send, sendUnreliable };
 }
 
 export class Relayer<MessageData> {
   private serverQueue: ServerQueuedMessageData<MessageData>[] = [];
   private clientBroadcastQueue: ServerQueuedMessageData<MessageData>[] = [];
   private clientQueue: ClientQueuedMessageData<MessageData>[] = [];
+  private isRelaying = false;
+
+  private readonly sendMessage: RemoteEvent<MessageEvent>;
+  private readonly sendUnreliableMessage: UnreliableRemoteEvent<MessageEvent>;
+  private readonly emitterId: number;
 
   public constructor(
     private readonly emitter: MessageEmitter<MessageData>
   ) {
+    this.emitterId = nextEmitterId++;
+    const remotes = createRemotePair(this.emitterId);
+    this.sendMessage = remotes.send;
+    this.sendUnreliableMessage = remotes.sendUnreliable;
+
     setLuneContext("client");
     if (RunService.IsClient()) {
-      this.emitter.trash.add(sendMessage.OnClientEvent.Connect(
+      this.emitter.trash.add(this.sendMessage.OnClientEvent.Connect(
         (...serializedPacket) => this.emitter.onRemoteFire(false, serializedPacket))
       );
-      this.emitter.trash.add(sendUnreliableMessage.OnClientEvent.Connect(
+      this.emitter.trash.add(this.sendUnreliableMessage.OnClientEvent.Connect(
         (...serializedPacket) => this.emitter.onRemoteFire(false, serializedPacket))
       );
     }
 
     setLuneContext("server");
     if (RunService.IsServer()) {
-      this.emitter.trash.add(sendMessage.OnServerEvent.Connect(
+      this.emitter.trash.add(this.sendMessage.OnServerEvent.Connect(
         (player, ...serializedPacket) => this.emitter.onRemoteFire(true, serializedPacket as never, player))
       );
-      this.emitter.trash.add(sendUnreliableMessage.OnServerEvent.Connect(
+      this.emitter.trash.add(this.sendUnreliableMessage.OnServerEvent.Connect(
         (player, ...serializedPacket) => this.emitter.onRemoteFire(true, serializedPacket as never, player))
       );
     }
+
+    // Clean up remotes when emitter is destroyed
+    this.emitter.trash.add(() => {
+      this.sendMessage.Destroy();
+      this.sendUnreliableMessage.Destroy();
+    });
 
     let elapsed = 0;
     const { batchRemotes, batchRate } = this.emitter.options;
@@ -92,55 +109,70 @@ export class Relayer<MessageData> {
 
   /** Send all queued data across the network simultaneously */
   public relayAll(): void {
-    if (RunService.IsClient())
-      return this.relay(
-        (...packets) => sendMessage.FireServer(...packets),
-        (...packets) => sendUnreliableMessage.FireServer(...packets),
-        this.serverQueue,
-        () => this.serverQueue = []
+    // Guard against re-entrancy: processing messages can trigger new emits
+    if (this.isRelaying) return;
+    this.isRelaying = true;
+
+    if (RunService.IsClient()) {
+      if (!this.serverQueue.isEmpty()) {
+        const queue = this.serverQueue;
+        this.serverQueue = [];
+        this.relay(
+          (...packets) => this.sendMessage.FireServer(...packets),
+          (...packets) => this.sendUnreliableMessage.FireServer(...packets),
+          queue
+        );
+      }
+      this.isRelaying = false;
+      return;
+    }
+
+    if (!this.clientBroadcastQueue.isEmpty()) {
+      const queue = this.clientBroadcastQueue;
+      this.clientBroadcastQueue = [];
+      this.relay(
+        (...packets) => this.sendMessage.FireAllClients(...packets),
+        (...packets) => this.sendUnreliableMessage.FireAllClients(...packets),
+        queue
       );
-
-    this.relay(
-      (...packets) => sendMessage.FireAllClients(...packets),
-      (...packets) => sendUnreliableMessage.FireAllClients(...packets),
-      this.clientBroadcastQueue,
-      () => this.clientBroadcastQueue = []
-    );
-
-    const playerPacketInfos = new Map<Player, PacketInfo[]>;
-    const addClientPacket = (player: Player, packetInfo: PacketInfo): void => {
-      const packetInfos = playerPacketInfos.get(player) ?? [];
-      packetInfos.push(packetInfo);
-      playerPacketInfos.set(player, packetInfos);
-    };
-
-    for (const [player, message, data, unreliable] of this.clientQueue) {
-      const packet = this.emitter.serdes.serializePacket(message, data);
-      const info = { packet, unreliable };
-      if (typeIs(player, "Instance"))
-        addClientPacket(player, info);
-      else
-        for (const p of player)
-          addClientPacket(p, info);
     }
 
     if (!this.clientQueue.isEmpty()) {
+      const playerPacketInfos = new Map<Player, PacketInfo[]>;
+      const addClientPacket = (player: Player, packetInfo: PacketInfo): void => {
+        const packetInfos = playerPacketInfos.get(player) ?? [];
+        packetInfos.push(packetInfo);
+        playerPacketInfos.set(player, packetInfos);
+      };
+
+      const queue = this.clientQueue;
+      this.clientQueue = [];
+      for (const [player, message, data, unreliable] of queue) {
+        const packet = this.emitter.serdes.serializePacket(message, data);
+        const info = { packet, unreliable };
+        if (typeIs(player, "Instance"))
+          addClientPacket(player, info);
+        else
+          for (const p of player)
+            addClientPacket(p, info);
+      }
+
       for (const [player, packetInfos] of playerPacketInfos) {
         if (packetInfos.isEmpty()) continue;
 
         const unreliablePackets = getAllPacketsWhich(packetInfos, isUnreliable);
         const packets = getAllPacketsWhich(packetInfos, isReliable);
         if (!unreliablePackets.isEmpty())
-          sendUnreliableMessage.FireClient(player, ...unreliablePackets);
+          this.sendUnreliableMessage.FireClient(player, ...unreliablePackets);
         if (!packets.isEmpty())
-          sendMessage.FireClient(player, ...packets);
+          this.sendMessage.FireClient(player, ...packets);
       }
-
-      this.clientQueue = [];
     }
+
+    this.isRelaying = false;
   }
 
-  private relay(send: MessageEvent, sendUnreliable: MessageEvent, queue: QueuedMessageData<MessageData>[], clearQueue: () => void): void {
+  private relay(send: MessageEvent, sendUnreliable: MessageEvent, queue: QueuedMessageData<MessageData>[]): void {
     if (queue.isEmpty()) return;
 
     const packetInfos = queue.map<PacketInfo>(messageData => {
@@ -163,7 +195,5 @@ export class Relayer<MessageData> {
       sendUnreliable(...unreliablePackets);
     if (!packets.isEmpty())
       send(...packets);
-
-    clearQueue();
   }
 }
