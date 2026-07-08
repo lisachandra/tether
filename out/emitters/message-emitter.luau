@@ -22,6 +22,7 @@ local defaultMesssageEmitterOptions = {
 	batchRemotes = true,
 	batchRate = 1 / 24,
 	doNotBatch = {},
+	testMode = false,
 }
 local MessageEmitter
 do
@@ -53,6 +54,7 @@ do
 		self.serverCallbacks = {}
 		self.serverFunctions = {}
 		self.guards = {}
+		self.testPlayer = self.options.testPlayer
 		self.trash:add(function()
 			self.clientCallbacks = {}
 			self.serverCallbacks = {}
@@ -162,6 +164,35 @@ do
 			return { true, ctx.data }
 		end
 		return { false, ctx.data }
+	end
+	function MessageEmitter:deliverLocally(isServer, message, data, player)
+		-- Deliver to event callbacks
+		local callbacksMap = if isServer then self.serverCallbacks else self.clientCallbacks
+		local _message = message
+		local callbacks = callbacksMap[_message]
+		if callbacks ~= nil then
+			if isServer then
+				local testPlayer = player or self.testPlayer or ({
+					Name = "TestPlayer",
+				})
+				for callback in callbacks do
+					self:executeServerCallback(callback, testPlayer, message, data)
+				end
+			else
+				for callback in callbacks do
+					self:executeClientCallback(callback, message, data)
+				end
+			end
+		end
+		-- Deliver to function callbacks (for invoke/setCallback patterns)
+		local functionsMap = if isServer then self.serverFunctions else self.clientFunctions
+		local _message_1 = message
+		local functions = functionsMap[_message_1]
+		if functions ~= nil then
+			for callback in functions do
+				self:executeClientCallback(callback, message, data)
+			end
+		end
 	end
 	function MessageEmitter:onRemoteFire(isServer, serializedPackets, player)
 		for _, packet in serializedPackets do

@@ -51,6 +51,11 @@ do
 		local _original = nextEmitterId
 		nextEmitterId += 1
 		self.emitterId = _original
+		if self.emitter.options.testMode then
+			self.sendMessage = nil
+			self.sendUnreliableMessage = nil
+			return self
+		end
 		local remotes = createRemotePair(self.emitterId)
 		self.sendMessage = remotes.send
 		self.sendUnreliableMessage = remotes.sendUnreliable

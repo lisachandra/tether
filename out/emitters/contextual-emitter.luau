@@ -9,10 +9,12 @@ do
 	end
 	function ContextualEmitter:on(message, callback)
 		local isClient = self.context == "client"
-		if RunService:IsClient() and not isClient then
-			return error("[tether::error] Cannot listen to server message from client")
-		elseif RunService:IsServer() and isClient then
-			return error("[tether::error] Cannot listen to client message from server")
+		if not self.master.options.testMode then
+			if RunService:IsClient() and not isClient then
+				return error("[tether::error] Cannot listen to server message from client")
+			elseif RunService:IsServer() and isClient then
+				return error("[tether::error] Cannot listen to client message from server")
+			end
 		end
 		local callbacksMap = if isClient then self.master.clientCallbacks else self.master.serverCallbacks
 		local _message = message

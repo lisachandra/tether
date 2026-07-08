@@ -12,6 +12,8 @@ export interface MessageEmitterOptions<MessageData> {
     readonly batchRemotes: boolean;
     readonly batchRate: number;
     readonly doNotBatch: Set<keyof MessageData>;
+    readonly testMode: boolean;
+    readonly testPlayer?: Player;
 }
 export declare class MessageEmitter<MessageData> extends Destroyable {
     readonly options: MessageEmitterOptions<MessageData>;
@@ -25,6 +27,8 @@ export declare class MessageEmitter<MessageData> extends Destroyable {
     /** @hidden */ clientFunctions: Map<keyof MessageData, Set<(data: unknown) => void>>;
     /** @hidden */ serverCallbacks: Map<keyof MessageData, Set<ServerMessageCallback>>;
     /** @hidden */ serverFunctions: Map<keyof MessageData, Set<(data: unknown) => void>>;
+    /** The mock player used in test mode. Reassign per-test without recreating the emitter. */
+    testPlayer: Player | undefined;
     private readonly guards;
     /** @metadata macro */
     static create<MessageData>(options?: Partial<MessageEmitterOptions<MessageData>>, meta?: Modding.Many<MessageEmitterMetadata<MessageData>>): MessageEmitter<MessageData>;
@@ -33,6 +37,8 @@ export declare class MessageEmitter<MessageData> extends Destroyable {
     runClientSendMiddlewares<Kind extends keyof MessageData>(message: Kind & BaseMessage, data?: MessageData[Kind], player?: Player | Player[]): [boolean, MessageData[Kind]];
     /** @hidden */
     runServerSendMiddlewares<Kind extends keyof MessageData>(message: Kind & BaseMessage, data?: MessageData[Kind]): [boolean, MessageData[Kind]];
+    /** @hidden */
+    deliverLocally<Kind extends keyof MessageData>(isServer: boolean, message: Kind & BaseMessage, data?: MessageData[Kind], player?: Player): void;
     /** @hidden */
     onRemoteFire(isServer: boolean, serializedPackets: SerializedPacket[], player?: Player): void;
     /**

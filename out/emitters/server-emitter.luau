@@ -27,6 +27,16 @@ do
 		if unreliable == nil then
 			unreliable = false
 		end
+		if self.master.options.testMode then
+			local _binding = self.master:runServerSendMiddlewares(message, data)
+			local dropRequest = _binding[1]
+			local newData = _binding[2]
+			if dropRequest then
+				return nil
+			end
+			self.master:deliverLocally(true, message, newData)
+			return nil
+		end
 		if RunService:IsServer() then
 			error("[tether::error] Cannot emit message from server to server")
 		end
@@ -41,7 +51,7 @@ do
 		end)
 	end
 	function ServerEmitter:setCallback(message, returnMessage, callback)
-		if RunService:IsClient() then
+		if not self.master.options.testMode and RunService:IsClient() then
 			error("[tether::error] Cannot listen to client message from server")
 		end
 		return self:on(message, function(player, data)
@@ -59,7 +69,7 @@ do
 		if unreliable == nil then
 			unreliable = false
 		end
-		if RunService:IsServer() then
+		if not self.master.options.testMode and RunService:IsServer() then
 			error("[tether::error] Cannot invoke function from server to server")
 		end
 		local _binding = self.master
