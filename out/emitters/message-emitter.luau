@@ -22,7 +22,6 @@ local defaultMesssageEmitterOptions = {
 	batchRemotes = true,
 	batchRate = 1 / 24,
 	doNotBatch = {},
-	testMode = false,
 }
 local MessageEmitter
 do

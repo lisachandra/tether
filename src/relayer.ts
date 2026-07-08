@@ -3,6 +3,7 @@ import { ReplicatedStorage, RunService } from "@rbxts/services";
 import { getAllPacketsWhich, isReliable, isUnreliable, shouldBatch } from "\./utility";
 import type { BaseMessage, MessageEvent, PacketInfo, SerializedPacket } from "./structs";
 import type { MessageEmitter } from "./emitters/message-emitter";
+import { getTestMode } from "./test-mode";
 
 export type ServerQueuedMessageData<MessageData> = [keyof MessageData & BaseMessage, MessageData[keyof MessageData], boolean];
 export type ClientQueuedMessageData<MessageData> = [Player | Player[], ...ServerQueuedMessageData<MessageData>];
@@ -48,7 +49,7 @@ export class Relayer<MessageData> {
 	) {
 		this.emitterId = nextEmitterId++;
 
-		if (this.emitter.options.testMode) {
+		if (getTestMode()) {
 			this.sendMessage = undefined!;
 			this.sendUnreliableMessage = undefined!;
 			return this;

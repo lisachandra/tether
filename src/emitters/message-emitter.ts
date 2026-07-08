@@ -34,15 +34,13 @@ const guardFailed = (message: BaseMessage, data: unknown) =>
 const defaultMesssageEmitterOptions: MessageEmitterOptions<unknown> = {
 	batchRemotes: true,
 	batchRate: 1 / 24,
-	doNotBatch: new Set,
-	testMode: false
+	doNotBatch: new Set
 };
 
 export interface MessageEmitterOptions<MessageData> {
 	readonly batchRemotes: boolean;
 	readonly batchRate: number;
 	readonly doNotBatch: Set<keyof MessageData>;
-	readonly testMode: boolean;
 	readonly testPlayer?: Player;
 }
 

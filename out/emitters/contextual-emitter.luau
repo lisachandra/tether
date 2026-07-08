@@ -1,6 +1,7 @@
 -- Compiled with roblox-ts v3.0.0
 local TS = _G[script]
 local RunService = TS.import(script, TS.getModule(script, "@rbxts", "services")).RunService
+local getTestMode = TS.import(script, script.Parent.Parent, "test-mode").getTestMode
 local ContextualEmitter
 do
 	ContextualEmitter = {}
@@ -9,7 +10,7 @@ do
 	end
 	function ContextualEmitter:on(message, callback)
 		local isClient = self.context == "client"
-		if not self.master.options.testMode then
+		if not getTestMode() then
 			if RunService:IsClient() and not isClient then
 				return error("[tether::error] Cannot listen to server message from client")
 			elseif RunService:IsServer() and isClient then

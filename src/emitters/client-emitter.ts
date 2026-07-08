@@ -3,6 +3,7 @@ import { Players, RunService } from "@rbxts/services";
 import { Error } from "../logging";
 import { ContextualEmitter } from "./contextual-emitter";
 import type { BaseMessage, ClientMessageCallback, ClientFunctionMessageCallback } from "../structs";
+import { getTestMode } from "../test-mode";
 
 declare let setLuneContext: (ctx: "server" | "client" | "both") => void;
 setLuneContext ??= () => { };
@@ -30,7 +31,7 @@ export class ClientEmitter<MessageData> extends ContextualEmitter<MessageData> {
 	 * @param unreliable Whether the message should be sent unreliably
 	 */
 	public emit<K extends keyof MessageData>(player: Player | Player[], message: K & BaseMessage, data?: MessageData[K], unreliable = false): void {
-		if (this.master.options.testMode) {
+		if (getTestMode()) {
 			const [dropRequest, newData] = this.master.runClientSendMiddlewares(message, data, player);
 			if (dropRequest) return;
 			this.master.deliverLocally(false, message, newData);
@@ -69,7 +70,7 @@ export class ClientEmitter<MessageData> extends ContextualEmitter<MessageData> {
    * @param unreliable Whether the message should be sent unreliably
    */
 	public emitAll<K extends keyof MessageData>(message: K & BaseMessage, data?: MessageData[K], unreliable = false): void {
-		if (this.master.options.testMode) {
+		if (getTestMode()) {
 			const [dropRequest, newData] = this.master.runClientSendMiddlewares(message, data);
 			if (dropRequest) return;
 			this.master.deliverLocally(false, message, newData);
@@ -97,7 +98,7 @@ export class ClientEmitter<MessageData> extends ContextualEmitter<MessageData> {
 		returnMessage: R & BaseMessage,
 		callback: ClientFunctionMessageCallback<MessageData[K], MessageData[R]>
 	): () => void {
-		if (!this.master.options.testMode && RunService.IsServer())
+		if (!getTestMode() && RunService.IsServer())
 			error(Error.NoServerListen);
 
 		return this.on(message, data => {
@@ -128,7 +129,7 @@ export class ClientEmitter<MessageData> extends ContextualEmitter<MessageData> {
 		data?: MessageData[K],
 		unreliable = false
 	): Promise<MessageData[R]> {
-		if (!this.master.options.testMode && RunService.IsClient())
+		if (!getTestMode() && RunService.IsClient())
 			error(Error.NoClientToClientFunction);
 
 		const { serverFunctions } = this.master;

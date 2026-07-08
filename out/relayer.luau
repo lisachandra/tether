@@ -8,6 +8,7 @@ local getAllPacketsWhich = _utility.getAllPacketsWhich
 local isReliable = _utility.isReliable
 local isUnreliable = _utility.isUnreliable
 local shouldBatch = _utility.shouldBatch
+local getTestMode = TS.import(script, script.Parent, "test-mode").getTestMode
 if setLuneContext == nil then
 	setLuneContext = function() end
 end
@@ -51,7 +52,7 @@ do
 		local _original = nextEmitterId
 		nextEmitterId += 1
 		self.emitterId = _original
-		if self.emitter.options.testMode then
+		if getTestMode() then
 			self.sendMessage = nil
 			self.sendUnreliableMessage = nil
 			return self

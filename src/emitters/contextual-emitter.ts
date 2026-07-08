@@ -2,6 +2,7 @@ import type { MessageEmitter } from "./message-emitter";
 import type { BaseMessage, MessageCallback, FunctionMessageCallback } from "../structs";
 import { RunService } from "@rbxts/services";
 import { Error } from "../logging";
+import { getTestMode } from "../test-mode";
 
 type Cleanup = () => void;
 
@@ -38,7 +39,7 @@ export abstract class ContextualEmitter<MessageData> {
 		callback: MessageCallback<MessageData[K]>
 	): Cleanup {
 		const isClient = this.context === "client";
-		if (!this.master.options.testMode) {
+		if (!getTestMode()) {
 			if (RunService.IsClient() && !isClient)
 				return error(Error.NoServerListen);
 			else if (RunService.IsServer() && isClient)

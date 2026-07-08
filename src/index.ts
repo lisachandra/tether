@@ -1,4 +1,5 @@
 export { MessageEmitter, type MessageEmitterOptions } from "./emitters/message-emitter";
+export { setTestMode, getTestMode } from "./test-mode";
 export { BuiltinMiddlewares } from "./builtin-middlewares";
 export {
 	DropRequest,

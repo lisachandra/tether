@@ -12,7 +12,6 @@ export interface MessageEmitterOptions<MessageData> {
     readonly batchRemotes: boolean;
     readonly batchRate: number;
     readonly doNotBatch: Set<keyof MessageData>;
-    readonly testMode: boolean;
     readonly testPlayer?: Player;
 }
 export declare class MessageEmitter<MessageData> extends Destroyable {

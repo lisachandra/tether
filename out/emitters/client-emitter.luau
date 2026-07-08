@@ -4,6 +4,7 @@ local _services = TS.import(script, TS.getModule(script, "@rbxts", "services"))
 local Players = _services.Players
 local RunService = _services.RunService
 local ContextualEmitter = TS.import(script, script.Parent, "contextual-emitter").ContextualEmitter
+local getTestMode = TS.import(script, script.Parent.Parent, "test-mode").getTestMode
 if setLuneContext == nil then
 	setLuneContext = function() end
 end
@@ -29,7 +30,7 @@ do
 		if unreliable == nil then
 			unreliable = false
 		end
-		if self.master.options.testMode then
+		if getTestMode() then
 			local _binding = self.master:runClientSendMiddlewares(message, data, player)
 			local dropRequest = _binding[1]
 			local newData = _binding[2]
@@ -86,7 +87,7 @@ do
 		if unreliable == nil then
 			unreliable = false
 		end
-		if self.master.options.testMode then
+		if getTestMode() then
 			local _binding = self.master:runClientSendMiddlewares(message, data)
 			local dropRequest = _binding[1]
 			local newData = _binding[2]
@@ -110,7 +111,7 @@ do
 		end)
 	end
 	function ClientEmitter:setCallback(message, returnMessage, callback)
-		if not self.master.options.testMode and RunService:IsServer() then
+		if not getTestMode() and RunService:IsServer() then
 			error("[tether::error] Cannot listen to server message from client")
 		end
 		return self:on(message, function(data)
@@ -128,7 +129,7 @@ do
 		if unreliable == nil then
 			unreliable = false
 		end
-		if not self.master.options.testMode and RunService:IsClient() then
+		if not getTestMode() and RunService:IsClient() then
 			error("[tether::error] Cannot invoke function from client to client")
 		end
 		local _binding = self.master
