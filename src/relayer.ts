@@ -21,15 +21,19 @@ function createRemotePair(id: number): {
 	const sendName = `tether_send_${id}`;
 	const sendUnreliableName = `tether_sendUnreliable_${id}`;
 
-	const existingSend = script.FindFirstChild(sendName);
-	const send = (existingSend ?? new Instance("RemoteEvent", script)) as RemoteEvent<MessageEvent>;
-	if (existingSend === undefined)
+	if (RunService.IsServer()) {
+		const send = new Instance("RemoteEvent", script);
 		send.Name = sendName;
 
-	const existingUnreliable = script.FindFirstChild(sendUnreliableName);
-	const sendUnreliable = (existingUnreliable ?? new Instance("UnreliableRemoteEvent", script)) as UnreliableRemoteEvent<MessageEvent>;
-	if (existingUnreliable === undefined)
+		const sendUnreliable = new Instance("UnreliableRemoteEvent", script);
 		sendUnreliable.Name = sendUnreliableName;
+
+		return { send, sendUnreliable };
+	}
+
+	// Client: wait for replicated remotes from the server
+	let send = script.WaitForChild(sendName, 5) as RemoteEvent<MessageEvent>;
+	let sendUnreliable = script.WaitForChild(sendUnreliableName, 5) as UnreliableRemoteEvent<MessageEvent>;
 
 	return { send, sendUnreliable };
 }
@@ -78,11 +82,13 @@ export class Relayer<MessageData> {
 			);
 		}
 
-		// Clean up remotes when emitter is destroyed
-		this.emitter.trash.add(() => {
-			this.sendMessage.Destroy();
-			this.sendUnreliableMessage.Destroy();
-		});
+		// Clean up remotes when emitter is destroyed (server only — they're replicated to clients)
+		if (RunService.IsServer()) {
+			this.emitter.trash.add(() => {
+				this.sendMessage.Destroy();
+				this.sendUnreliableMessage.Destroy();
+			});
+		}
 
 		let elapsed = 0;
 		const { batchRemotes, batchRate } = this.emitter.options;

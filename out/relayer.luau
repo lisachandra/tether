@@ -14,16 +14,19 @@ local nextEmitterId = 0
 local function createRemotePair(id)
 	local sendName = `tether_send_{id}`
 	local sendUnreliableName = `tether_sendUnreliable_{id}`
-	local existingSend = script:FindFirstChild(sendName)
-	local send = (existingSend or Instance.new("RemoteEvent", script))
-	if existingSend == nil then
+	if RunService:IsServer() then
+		local send = Instance.new("RemoteEvent", script)
 		send.Name = sendName
-	end
-	local existingUnreliable = script:FindFirstChild(sendUnreliableName)
-	local sendUnreliable = (existingUnreliable or Instance.new("UnreliableRemoteEvent", script))
-	if existingUnreliable == nil then
+		local sendUnreliable = Instance.new("UnreliableRemoteEvent", script)
 		sendUnreliable.Name = sendUnreliableName
+		return {
+			send = send,
+			sendUnreliable = sendUnreliable,
+		}
 	end
+	-- Client: wait for replicated remotes from the server
+	local send = script:WaitForChild(sendName, 5)
+	local sendUnreliable = script:WaitForChild(sendUnreliableName, 5)
 	return {
 		send = send,
 		sendUnreliable = sendUnreliable,
@@ -80,11 +83,13 @@ do
 				return self.emitter:onRemoteFire(true, serializedPacket, player)
 			end))
 		end
-		-- Clean up remotes when emitter is destroyed
-		self.emitter.trash:add(function()
-			self.sendMessage:Destroy()
-			self.sendUnreliableMessage:Destroy()
-		end)
+		-- Clean up remotes when emitter is destroyed (server only — they're replicated to clients)
+		if RunService:IsServer() then
+			self.emitter.trash:add(function()
+				self.sendMessage:Destroy()
+				self.sendUnreliableMessage:Destroy()
+			end)
+		end
 		local elapsed = 0
 		local _binding = self.emitter.options
 		local batchRemotes = _binding.batchRemotes
