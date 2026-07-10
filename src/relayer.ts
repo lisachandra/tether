@@ -22,18 +22,18 @@ function createRemotePair(id: number): {
 	const sendUnreliableName = `tether_sendUnreliable_${id}`;
 
 	if (RunService.IsServer()) {
-		const send = new Instance("RemoteEvent", script);
+		const send = new Instance("RemoteEvent", script.Parent!);
 		send.Name = sendName;
 
-		const sendUnreliable = new Instance("UnreliableRemoteEvent", script);
+		const sendUnreliable = new Instance("UnreliableRemoteEvent", script.Parent!);
 		sendUnreliable.Name = sendUnreliableName;
 
 		return { send, sendUnreliable };
 	}
 
 	// Client: wait for replicated remotes from the server
-	let send = script.WaitForChild(sendName, 5) as RemoteEvent<MessageEvent>;
-	let sendUnreliable = script.WaitForChild(sendUnreliableName, 5) as UnreliableRemoteEvent<MessageEvent>;
+	let send = script.Parent!.WaitForChild(sendName, 5) as RemoteEvent<MessageEvent>;
+	let sendUnreliable = script.Parent!.WaitForChild(sendUnreliableName, 5) as UnreliableRemoteEvent<MessageEvent>;
 
 	return { send, sendUnreliable };
 }
