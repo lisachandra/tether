@@ -1,8 +1,6 @@
 -- Compiled with roblox-ts v3.0.0
 local TS = _G[script]
-local _services = TS.import(script, TS.getModule(script, "@rbxts", "services"))
-local ReplicatedStorage = _services.ReplicatedStorage
-local RunService = _services.RunService
+local RunService = TS.import(script, TS.getModule(script, "@rbxts", "services")).RunService
 local _utility = TS.import(script, script.Parent, "utility")
 local getAllPacketsWhich = _utility.getAllPacketsWhich
 local isReliable = _utility.isReliable
@@ -16,13 +14,13 @@ local nextEmitterId = 0
 local function createRemotePair(id)
 	local sendName = `tether_send_{id}`
 	local sendUnreliableName = `tether_sendUnreliable_{id}`
-	local existingSend = ReplicatedStorage:FindFirstChild(sendName)
-	local send = (existingSend or Instance.new("RemoteEvent", ReplicatedStorage))
+	local existingSend = script:FindFirstChild(sendName)
+	local send = (existingSend or Instance.new("RemoteEvent", script))
 	if existingSend == nil then
 		send.Name = sendName
 	end
-	local existingUnreliable = ReplicatedStorage:FindFirstChild(sendUnreliableName)
-	local sendUnreliable = (existingUnreliable or Instance.new("UnreliableRemoteEvent", ReplicatedStorage))
+	local existingUnreliable = script:FindFirstChild(sendUnreliableName)
+	local sendUnreliable = (existingUnreliable or Instance.new("UnreliableRemoteEvent", script))
 	if existingUnreliable == nil then
 		sendUnreliable.Name = sendUnreliableName
 	end
