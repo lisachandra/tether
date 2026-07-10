@@ -1,4 +1,4 @@
-import { ReplicatedStorage, RunService } from "@rbxts/services";
+import { RunService } from "@rbxts/services";
 
 import { getAllPacketsWhich, isReliable, isUnreliable, shouldBatch } from "\./utility";
 import type { BaseMessage, MessageEvent, PacketInfo, SerializedPacket } from "./structs";
@@ -21,13 +21,13 @@ function createRemotePair(id: number): {
 	const sendName = `tether_send_${id}`;
 	const sendUnreliableName = `tether_sendUnreliable_${id}`;
 
-	const existingSend = ReplicatedStorage.FindFirstChild(sendName);
-	const send = (existingSend ?? new Instance("RemoteEvent", ReplicatedStorage)) as RemoteEvent<MessageEvent>;
+	const existingSend = script.FindFirstChild(sendName);
+	const send = (existingSend ?? new Instance("RemoteEvent", script)) as RemoteEvent<MessageEvent>;
 	if (existingSend === undefined)
 		send.Name = sendName;
 
-	const existingUnreliable = ReplicatedStorage.FindFirstChild(sendUnreliableName);
-	const sendUnreliable = (existingUnreliable ?? new Instance("UnreliableRemoteEvent", ReplicatedStorage)) as UnreliableRemoteEvent<MessageEvent>;
+	const existingUnreliable = script.FindFirstChild(sendUnreliableName);
+	const sendUnreliable = (existingUnreliable ?? new Instance("UnreliableRemoteEvent", script)) as UnreliableRemoteEvent<MessageEvent>;
 	if (existingUnreliable === undefined)
 		sendUnreliable.Name = sendUnreliableName;
 
