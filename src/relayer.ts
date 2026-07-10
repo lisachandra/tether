@@ -32,8 +32,8 @@ function createRemotePair(id: number): {
 	}
 
 	// Client: wait for replicated remotes from the server
-	let send = script.WaitForChild(sendName, 5) as RemoteEvent<MessageEvent>;
-	let sendUnreliable = script.WaitForChild(sendUnreliableName, 5) as UnreliableRemoteEvent<MessageEvent>;
+	let send = script.WaitForChild(sendName) as RemoteEvent<MessageEvent>;
+	let sendUnreliable = script.WaitForChild(sendUnreliableName) as UnreliableRemoteEvent<MessageEvent>;
 
 	return { send, sendUnreliable };
 }

@@ -25,8 +25,8 @@ local function createRemotePair(id)
 		}
 	end
 	-- Client: wait for replicated remotes from the server
-	local send = script:WaitForChild(sendName, 5)
-	local sendUnreliable = script:WaitForChild(sendUnreliableName, 5)
+	local send = script:WaitForChild(sendName)
+	local sendUnreliable = script:WaitForChild(sendUnreliableName)
 	return {
 		send = send,
 		sendUnreliable = sendUnreliable,
