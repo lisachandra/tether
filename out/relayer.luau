@@ -15,9 +15,9 @@ local function createRemotePair(id)
 	local sendName = `tether_send_{id}`
 	local sendUnreliableName = `tether_sendUnreliable_{id}`
 	if RunService:IsServer() then
-		local send = Instance.new("RemoteEvent", script.Parent)
+		local send = Instance.new("RemoteEvent", script)
 		send.Name = sendName
-		local sendUnreliable = Instance.new("UnreliableRemoteEvent", script.Parent)
+		local sendUnreliable = Instance.new("UnreliableRemoteEvent", script)
 		sendUnreliable.Name = sendUnreliableName
 		return {
 			send = send,
@@ -25,8 +25,8 @@ local function createRemotePair(id)
 		}
 	end
 	-- Client: wait for replicated remotes from the server
-	local send = script.Parent:WaitForChild(sendName, 5)
-	local sendUnreliable = script.Parent:WaitForChild(sendUnreliableName, 5)
+	local send = script:WaitForChild(sendName, 5)
+	local sendUnreliable = script:WaitForChild(sendUnreliableName, 5)
 	return {
 		send = send,
 		sendUnreliable = sendUnreliable,
